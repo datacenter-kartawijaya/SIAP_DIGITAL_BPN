@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'password');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function getRole() {
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userPath) ? get(userPath).data.role : null;
+    }
+
+    function isRole(role) {
+      return isSignedIn() && getRole() == role;
+    }
+
+    function isSuperAdmin() {
+      return isRole('SUPER_ADMIN');
+    }
+
+    function isAdmin() {
+      let role = getRole();
+      return isSignedIn() && (role == 'SUPER_ADMIN' || role == 'ADMIN');
+    }
+
+    function isStaff() {
+      let role = getRole();
+      return isSignedIn() && (role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'PETUGAS_ARSIP');
+    }
+
+    // Archive Validation
+    function isValidArchive(data) {
+      return data.type in ['BUKU_TANAH', 'WARKAH', 'SURAT_UKUR'] &&
+             data.namaPemegangHak is string && data.namaPemegangHak.size() > 0 &&
+             data.namaPemegangHak.size() <= 255;
+    }
+
+    match /archives/{archiveId} {
+      allow get: if isStaff();
+      allow list: if isStaff();
+      allow create: if isStaff() && isValidArchive(incoming());
+      allow update: if isStaff() && isValidArchive(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Loan Validation
+    function isValidLoan(data) {
+      return data.archiveId is string && data.archiveId.size() > 0 &&
+             data.borrowerName is string && data.borrowerName.size() > 0 &&
+             data.status in ['Active', 'Returned', 'Overdue'] &&
+             data.loanDate is string &&
+             data.expectedReturnDate is string &&
+             data.createdBy is string;
+    }
+
+    match /loans/{loanId} {
+      allow get: if isStaff();
+      allow list: if isStaff();
+      allow create: if isStaff() && isValidLoan(incoming()) && incoming().createdBy == request.auth.uid;
+      allow update: if isStaff() && isValidLoan(incoming()) && (
+        // Only allow certain fields to change unless Admin
+        isAdmin() || (
+          // Standard update for returning loan
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'actualReturnDate', 'returnedBy', 'notes', 'reminderSent'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /users/{uid} {
+      // Basic access: Own profile (by UID or by ID Prefix)
+      allow get: if isSignedIn() && (
+        request.auth.uid == uid || 
+        uid == request.auth.token.email.split("@")[0]
+      );
+      
+      // Allow searching for pre-profiles by email field
+      allow get: if isSignedIn() && (
+        resource != null && (
+          resource.data.email == request.auth.token.email ||
+          resource.data.email == request.auth.token.email.split("@")[0]
+        )
+      );
+
+      // Staff/Admin access
+      allow get, list: if isStaff();
+      
+      // Allow creation of your own profile or by Admin
+      allow create: if isSignedIn() && (
+        isAdmin() || 
+        request.auth.uid == uid
+      );
+      
+      // Allow update of your own profile or by Admin
+      allow update: if isSignedIn() && (
+        request.auth.uid == uid || 
+        isAdmin()
+      );
+      
+      // Allow deletion of your own profile (for claiming) or by Admin
+      allow delete: if isSignedIn() && (
+        uid == request.auth.uid ||
+        uid == request.auth.token.email.split("@")[0] ||
+        isAdmin()
+      );
+    }
+
+    match /locations/{locationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

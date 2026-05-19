@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "archive": {
+      "title": "Archive",
+      "description": "A land record archive (Buku Tanah or Warkah)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["BUKU_TANAH", "WARKAH"] },
+        "noHak": { "type": "string" },
+        "jenisHak": { "type": "string" },
+        "namaPemegangHak": { "type": "string" },
+        "noSU": { "type": "string" },
+        "tahunSU": { "type": "integer" },
+        "kecamatan": { "type": "string" },
+        "kelurahan": { "type": "string" },
+        "noSK": { "type": "string" },
+        "hasBukuTanah": { "type": "boolean" },
+        "hasSuratUkur": { "type": "boolean" },
+        "noDI208": { "type": "string" },
+        "jenisWarkah": { "type": "string" },
+        "jenisKegiatan": { "type": "string" },
+        "tahun": { "type": "integer" },
+        "rak": { "type": "string" },
+        "shaft": { "type": "string" },
+        "boks": { "type": "string" },
+        "bundel": { "type": "string" },
+        "keterangan": { "type": "string" },
+        "status": { "type": "string", "enum": ["Available", "Borrowed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["type", "namaPemegangHak", "createdAt"]
+    },
+    "loan": {
+      "title": "Loan",
+      "description": "Record of someone borrowing an archive",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "archiveId": { "type": "string" },
+        "borrowerName": { "type": "string" },
+        "purpose": { "type": "string" },
+        "borrowerPhoto": { "type": "string" },
+        "receiptNo": { "type": "string" },
+        "loanDate": { "type": "string", "format": "date-time" },
+        "expectedReturnDate": { "type": "string", "format": "date-time" },
+        "actualReturnDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Active", "Returned", "Overdue"] },
+        "notes": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "returnedBy": { "type": "string" },
+        "reminderSent": { "type": "boolean" }
+      },
+      "required": ["archiveId", "borrowerName", "loanDate", "status", "createdBy"]
+    },
+    "user_profile": {
+      "title": "User Profile",
+      "description": "User account and roles",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "ADMIN", "PETUGAS_ARSIP"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/archives/{archiveId}": {
+      "schema": "archive",
+      "description": "Collection of all land archives"
+    },
+    "/loans/{loanId}": {
+      "schema": "loan",
+      "description": "Collection of borrowing records"
+    },
+    "/users/{uid}": {
+      "schema": "user_profile",
+      "description": "Collection of user profiles"
+    }
+  }
+}

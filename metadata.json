@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Arsip Digital BPN Kota Banjarmasin",
+  "description": "Aplikasi manajemen arsip digital untuk Buku Tanah dan Warkah Kantor Pertanahan Kota Banjarmasin.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
