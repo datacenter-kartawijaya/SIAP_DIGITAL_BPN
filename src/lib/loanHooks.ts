@@ -87,6 +87,21 @@ export function useLoans() {
         updatedAt: serverTimestamp()
       });
 
+      // Automated notification trigger
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          title: "Peminjaman Berkas Baru",
+          body: `Arsip dipinjam oleh ${borrowerName} untuk keperluan: ${purpose}.`,
+          type: 'INFO',
+          category: 'LOAN_NEW',
+          isRead: false,
+          referenceId: loanId,
+          createdAt: serverTimestamp()
+        });
+      } catch (notifErr) {
+        console.error("Failed to autolog loan notification:", notifErr);
+      }
+
       return { id: loanId, ...loanData };
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, collectionPath);
@@ -110,6 +125,23 @@ export function useLoans() {
         status: 'Available',
         updatedAt: serverTimestamp()
       });
+
+      // Automated notification trigger
+      try {
+        const loanDoc = loans.find(l => l.id === loanId);
+        const borrowerStr = loanDoc ? ` dari ${loanDoc.borrowerName}` : '';
+        await addDoc(collection(db, 'notifications'), {
+          title: "Pengembalian Berkas Sukses",
+          body: `Arsip telah berhasil dikembalikan${borrowerStr}. Terima kasih.`,
+          type: 'SUCCESS',
+          category: 'LOAN_RETURN',
+          isRead: false,
+          referenceId: loanId,
+          createdAt: serverTimestamp()
+        });
+      } catch (notifErr) {
+        console.error("Failed to autolog return notification:", notifErr);
+      }
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `loans/${loanId}`);
     }

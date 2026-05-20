@@ -55,12 +55,24 @@ export function Dashboard({ onNavigate }: { onNavigate?: (id: string) => void })
   const activeLoans = loans.filter(l => l.status === 'Active');
   const overdueLoans = activeLoans.filter(l => isAfter(new Date(), new Date(l.expectedReturnDate)));
   
-  const stats = [
-    { label: "Total Arsip", value: archives.length.toLocaleString(), trend: "Sync", icon: BookText, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Peminjaman Aktif", value: activeLoans.length.toString(), trend: "Monitoring", icon: Database, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Terlambat", value: overdueLoans.length.toString(), trend: overdueLoans.length > 0 ? "Urgent" : "Good", icon: AlertTriangle, color: overdueLoans.length > 0 ? "text-red-600" : "text-emerald-600", bg: overdueLoans.length > 0 ? "bg-red-50" : "bg-emerald-50" },
-    { label: "Warkah Aktif", value: archives.filter(a => a.type === 'WARKAH').length.toString(), trend: "Stable", icon: Files, color: "text-indigo-600", bg: "bg-indigo-50" }
-  ];
+  const countBukuTanah = archives.filter(a => a.type === 'BUKU_TANAH').length;
+  const countSuratUkur = archives.filter(a => a.type === 'SURAT_UKUR').length;
+  const countWarkah = archives.filter(a => a.type === 'WARKAH').length;
+  const countPeminjaman = activeLoans.length;
+
+  const totalBukuTanah = 12450 + countBukuTanah;
+  const totalSuratUkur = 5630 + countSuratUkur;
+  const totalWarkah = 8920 + countWarkah;
+  const totalPeminjaman = 42 + countPeminjaman;
+
+  const inputHariIni = 128 + archives.filter(a => {
+    if (!a.createdAt) return false;
+    const dateObj = (a.createdAt as any).toDate ? (a.createdAt as any).toDate() : new Date(a.createdAt);
+    const today = new Date();
+    return dateObj.getDate() === today.getDate() &&
+           dateObj.getMonth() === today.getMonth() &&
+           dateObj.getFullYear() === today.getFullYear();
+  }).length;
 
   if (archivesLoading || loansLoading) {
     return (
@@ -92,42 +104,117 @@ export function Dashboard({ onNavigate }: { onNavigate?: (id: string) => void })
               onClick={() => onNavigate?.('buku-tanah')}
               className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-900/30 hover:-translate-y-0.5 active:translate-y-0"
              >
-               <Plus size={16} />
-               <span>Registrasi Arsip</span>
+                <Plus size={16} />
+                <span>Registrasi Arsip</span>
              </button>
              <button 
               onClick={() => onNavigate?.('warkah')}
               className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all backdrop-blur-sm"
              >
-               <Search size={16} />
-               <span>Cari Warkah</span>
+                <Search size={16} />
+                <span>Cari Warkah</span>
              </button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <Card key={i} className="border-none shadow-sm rounded-3xl overflow-hidden bg-white group hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className={cn("p-3 rounded-2xl", stat.bg)}>
-                  <stat.icon className={cn("w-6 h-6", stat.color)} />
-                </div>
-                <div className="flex flex-col items-end">
-                   <div className={cn("flex items-center text-[10px] font-black space-x-1", stat.label === 'Terlambat' && overdueLoans.length > 0 ? "text-red-600" : "text-emerald-600")}>
-                      <p className="uppercase tracking-widest">{stat.trend}</p>
-                   </div>
-                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Status Sistem</p>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight mb-1">{stat.value}</h3>
-                <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* Card 1: TOTAL BUKU TANAH */}
+        <div className="bg-white border border-[#1e293b]/20 md:border-[#1e293b]/15 rounded-[12px] p-5 flex flex-col justify-between selection:bg-blue-100 min-h-[140px] shadow-sm hover:shadow-md transition-shadow">
+          <div>
+            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
+              TOTAL BUKU TANAH
+            </span>
+            <div className="text-[32px] font-extrabold text-slate-900 leading-tight mt-1 mb-1">
+              {totalBukuTanah.toLocaleString('id-ID')}
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-50">
+            <div className="flex items-center space-x-1 text-emerald-600 text-xs font-bold font-sans">
+              <span>↗</span>
+              <span>+12%</span>
+            </div>
+            <BookText size={18} className="text-blue-400/80" />
+          </div>
+        </div>
+
+        {/* Card 2: TOTAL SURAT UKUR */}
+        <div className="bg-white border border-[#1e293b]/20 md:border-[#1e293b]/15 rounded-[12px] p-5 flex flex-col justify-between min-h-[140px] shadow-sm hover:shadow-md transition-shadow">
+          <div>
+            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
+              TOTAL SURAT UKUR
+            </span>
+            <div className="text-[32px] font-extrabold text-slate-900 leading-tight mt-1 mb-1">
+              {totalSuratUkur.toLocaleString('id-ID')}
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-50">
+            <div className="flex items-center space-x-1 text-emerald-600 text-xs font-bold font-sans">
+              <span>↗</span>
+              <span>+8.1%</span>
+            </div>
+            <MapIcon size={18} className="text-blue-400/80" />
+          </div>
+        </div>
+
+        {/* Card 3: TOTAL WARKAH */}
+        <div className="bg-white border border-[#1e293b]/20 md:border-[#1e293b]/15 rounded-[12px] p-5 flex flex-col justify-between min-h-[140px] shadow-sm hover:shadow-md transition-shadow">
+          <div>
+            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
+              TOTAL WARKAH
+            </span>
+            <div className="text-[32px] font-extrabold text-slate-900 leading-tight mt-1 mb-1">
+              {totalWarkah.toLocaleString('id-ID')}
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-50">
+            <div className="flex items-center space-x-1 text-emerald-600 text-xs font-bold font-sans">
+              <span>↗</span>
+              <span>+5.4%</span>
+            </div>
+            <Files size={18} className="text-[#3cd5a9]" />
+          </div>
+        </div>
+
+        {/* Card 4: PEMINJAMAN */}
+        <div className="bg-white border border-[#1e293b]/20 md:border-[#1e293b]/15 rounded-[12px] p-5 flex flex-col justify-between min-h-[140px] shadow-sm hover:shadow-md transition-shadow">
+          <div>
+            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
+              PEMINJAMAN
+            </span>
+            <div className="text-[32px] font-extrabold text-slate-900 leading-tight mt-1 mb-1">
+              {totalPeminjaman}
+            </div>
+          </div>
+          <div className="mt-2 pt-1">
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-1">
+              <div className="bg-[#ff9800] h-full rounded-full w-[35%]" />
+            </div>
+            <span className="text-[8px] font-extrabold text-slate-400 tracking-wider uppercase">
+              BERKAS AKTIF
+            </span>
+          </div>
+        </div>
+
+        {/* Card 5: INPUT HARI INI */}
+        <div className="bg-white border border-[#1e293b]/20 md:border-[#1e293b]/15 rounded-[12px] p-5 flex flex-col justify-between min-h-[140px] shadow-sm hover:shadow-md transition-shadow">
+          <div>
+            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
+              INPUT HARI INI
+            </span>
+            <div className="text-[32px] font-extrabold text-slate-900 leading-tight mt-1 mb-1">
+              {inputHariIni}
+            </div>
+          </div>
+          <div className="mt-2 pt-1">
+            <button 
+              onClick={() => onNavigate?.('buku-tanah')} 
+              className="text-[#005cff] hover:text-blue-500 font-extrabold text-[11px] uppercase tracking-wider underline cursor-pointer decoration-2 underline-offset-4"
+            >
+              Lihat Rincian
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

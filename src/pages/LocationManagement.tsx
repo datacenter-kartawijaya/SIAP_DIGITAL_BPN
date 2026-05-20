@@ -227,14 +227,6 @@ export function LocationManagement() {
           </div>
           <div className="flex items-center space-x-2">
             <Button 
-              variant="outline"
-              className="h-12 px-6 rounded-2xl space-x-2 border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50"
-              onClick={handleSeedData}
-            >
-              <RefreshCw size={16} />
-              <span className="hidden xs:inline">Reset Seed</span>
-            </Button>
-            <Button 
               className="bg-blue-600 hover:bg-blue-500 h-12 px-6 rounded-2xl space-x-2 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all"
               onClick={() => handleOpenForm()}
             >

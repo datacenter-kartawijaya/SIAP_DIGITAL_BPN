@@ -69,3 +69,15 @@ export interface Loan {
   returnedBy?: string;
   reminderSent?: boolean;
 }
+
+export interface SystemNotification {
+  id: string;
+  title: string;
+  body: string;
+  type: 'INFO' | 'WARNING' | 'ALERT' | 'SUCCESS';
+  category: 'LOAN_OVERDUE' | 'LOAN_NEW' | 'LOAN_RETURN' | 'INVENTORY_COMPLETENESS' | 'SYSTEM';
+  isRead: boolean;
+  createdAt: string;
+  referenceId?: string; // loanId or archiveId
+}
+

@@ -19,6 +19,9 @@ import {
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
+import { useLoans } from "@/src/lib/loanHooks";
+import { useArchives } from "@/src/lib/hooks";
+import { useNotifications } from "@/src/lib/notificationHooks";
 
 interface NavItem {
   title: string;
@@ -32,6 +35,7 @@ const navItems: NavItem[] = [
   { title: "Surat Ukur", icon: MapIcon, id: "surat-ukur" },
   { title: "Warkah", icon: Files, id: "warkah" },
   { title: "Peminjaman", icon: Database, id: "loans" },
+  { title: "Notifikasi", icon: Bell, id: "notifications" },
   { title: "Manajemen User", icon: Users, id: "users" },
   { title: "Master Wilayah", icon: MapIcon, id: "locations" },
 ];
@@ -62,6 +66,10 @@ interface ShellProps {
 
 export function Shell({ children, activeId, onNavigate, user, onLogout }: ShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { loans } = useLoans();
+  const { archives } = useArchives();
+  const { notifications } = useNotifications(loans, archives);
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const filteredNavItems = navItems.filter(item => {
     if (item.id === 'users' || item.id === 'locations') {
@@ -185,9 +193,16 @@ export function Shell({ children, activeId, onNavigate, user, onLogout }: ShellP
             <Clock />
             <div className="h-4 w-px bg-white/10"></div>
             <div className="flex items-center space-x-4">
-               <button className="relative p-2 text-white/60 hover:text-white hover:bg-white/5 rounded-full transition-all">
+               <button 
+                 onClick={() => onNavigate('notifications')}
+                 className="relative p-2 text-white/60 hover:text-white hover:bg-white/5 rounded-full transition-all cursor-pointer"
+               >
                   <Bell size={18} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-brand-blue"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 bg-red-500 text-white font-black text-[8px] flex items-center justify-center rounded-full border border-brand-blue shrink-0 select-none">
+                      {unreadCount}
+                    </span>
+                  )}
                </button>
                <div className="hidden sm:flex flex-col items-end">
                  <p className="text-[11px] font-black leading-none text-white uppercase tracking-wider">{user?.displayName}</p>
