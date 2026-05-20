@@ -4,6 +4,9 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Printer, Download, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface LoanReceiptProps {
   loan: Loan;
@@ -12,14 +15,144 @@ interface LoanReceiptProps {
 }
 
 export function LoanReceipt({ loan, archive, onClose }: LoanReceiptProps) {
+  const [isGenerating, setIsGenerating] = React.useState(false);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSavePDF = async () => {
+    const element = document.getElementById("receipt-download-card");
+    if (!element) {
+      toast.error("Elemen tanda terima tidak ditemukan");
+      return;
+    }
+
+    setIsGenerating(true);
+    const toastId = toast.loading("Sedang memproses dan mengunduh berkas PDF...");
+
+    try {
+      // Small timeout to let any rendering settle
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Capture the card element using html2canvas with special workarounds for oklch colors
+      const canvas = await html2canvas(element, {
+        scale: 2, // 2x resolution for super crisp text and logo
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        onclone: (clonedDoc) => {
+          // 1. Sanitize style tags of the cloned document by replacing oklch with hex colors
+          const styles = clonedDoc.querySelectorAll("style");
+          styles.forEach((style) => {
+            style.innerHTML = style.innerHTML.replace(/oklch\([^)]+\)/g, (match) => {
+              if (match.includes("0.97") || match.includes("0.96") || match.includes("0.95")) return "#f8fafc";
+              if (match.includes("253.514") || match.includes("253.5") || match.includes("250")) return "#2563eb";
+              if (match.includes("0.573")) return "#2563eb";
+              return "#1e293b";
+            });
+          });
+
+          // 2. Sanitize all elements in the cloned document by setting safe hex inline styles 
+          const allElements = clonedDoc.querySelectorAll("*");
+          allElements.forEach((node) => {
+            const htmlEl = node as HTMLElement;
+            if (htmlEl.style) {
+              if (htmlEl.style.cssText) {
+                htmlEl.style.cssText = htmlEl.style.cssText.replace(/oklch\([^)]+\)/g, "#1e293b");
+              }
+              
+              let classStr = "";
+              if (typeof htmlEl.getAttribute === "function") {
+                classStr = htmlEl.getAttribute("class") || "";
+              } else if (typeof htmlEl.className === "string") {
+                classStr = htmlEl.className;
+              }
+              const classes = classStr ? classStr.split(/\s+/) : [];
+              
+              // Apply hard colors to avoid Tailwind V4 custom oklch variables lookup in computedStyle
+              if (classes.includes("bg-white")) htmlEl.style.backgroundColor = "#ffffff";
+              if (classes.includes("bg-slate-50")) htmlEl.style.backgroundColor = "#f8fafc";
+              if (classes.includes("bg-blue-600")) htmlEl.style.backgroundColor = "#2563eb";
+              
+              if (classes.includes("text-slate-900")) htmlEl.style.color = "#0f172a";
+              if (classes.includes("text-slate-700")) htmlEl.style.color = "#334155";
+              if (classes.includes("text-slate-500")) htmlEl.style.color = "#64748b";
+              if (classes.includes("text-slate-400")) htmlEl.style.color = "#94a3b8";
+              if (classes.includes("text-slate-300")) htmlEl.style.color = "#cbd5e1";
+              if (classes.includes("text-blue-600")) htmlEl.style.color = "#2563eb";
+              if (classes.includes("text-red-600")) htmlEl.style.color = "#dc2626";
+
+              if (classes.includes("border-slate-100")) {
+                htmlEl.style.borderColor = "#f1f5f9";
+                htmlEl.style.borderStyle = "solid";
+                htmlEl.style.borderWidth = "1px";
+              }
+              if (classes.includes("border-slate-50")) {
+                htmlEl.style.borderColor = "#f8fafc";
+                htmlEl.style.borderStyle = "solid";
+                htmlEl.style.borderWidth = "1px";
+              }
+              if (classes.includes("border-b-2") && classes.includes("border-slate-900")) {
+                htmlEl.style.borderBottom = "2px solid #0f172a";
+              }
+              if (classes.includes("border-b") && classes.includes("border-slate-900")) {
+                htmlEl.style.borderBottom = "1px solid #0f172a";
+              }
+              if (classes.includes("border-t") && classes.includes("border-slate-50")) {
+                htmlEl.style.borderTop = "1px solid #f8fafc";
+              }
+            }
+          });
+        },
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // Calculate A4 dimensions (210mm x 297mm)
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // Maintain margins and size nicely
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const margin = 10; // 10mm margins
+      const targetWidth = pdfWidth - (margin * 2);
+      const targetHeight = (canvas.height * targetWidth) / canvas.width;
+
+      // Add image to cover properly
+      pdf.addImage(imgData, "PNG", margin, margin, targetWidth, targetHeight, undefined, "FAST");
+
+      const fileName = `bukti_pinjam_${loan.receiptNo ? loan.receiptNo.replace(/\//g, "-") : "tanda_terima"}.pdf`;
+      pdf.save(fileName);
+
+      toast.success("PDF Berhasil Diunduh!", {
+        id: toastId,
+        description: `Berkas ${fileName} telah disimpan.`,
+      });
+    } catch (err: any) {
+      console.error("Gagal melakukan ekspor PDF:", err);
+      toast.error("Gagal mengunduh berkas PDF", {
+        id: toastId,
+        description: err.message || "Silakan coba lagi.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-8 bg-slate-50 print:bg-white print:p-0" id="receipt-content">
-        <div className="max-w-2xl mx-auto bg-white shadow-2xl rounded-[2rem] p-10 border border-slate-100 print:shadow-none print:border-none print:rounded-none">
+        <div 
+          id="receipt-download-card"
+          className="max-w-2xl mx-auto bg-white shadow-2xl rounded-[2rem] p-10 border border-slate-100 print:shadow-none print:border-none print:rounded-none"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b-2 border-slate-900 pb-8 mb-8">
             <div className="flex items-center space-x-4">
@@ -84,8 +217,8 @@ export function LoanReceipt({ loan, archive, onClose }: LoanReceiptProps) {
                       <p className="text-xs font-black text-slate-700">{archive.shaft}</p>
                    </div>
                    <div className="bg-slate-50 rounded-xl p-3 text-center">
-                      <p className="text-[7px] font-black text-slate-300 uppercase mb-1">BNDL</p>
-                      <p className="text-xs font-black text-slate-700">{archive.bundel || "-"}</p>
+                      <p className="text-[7px] font-black text-slate-300 uppercase mb-1">BOKS</p>
+                      <p className="text-xs font-black text-slate-700">{archive.boks || archive.bundel || "-"}</p>
                    </div>
                 </div>
               </div>
@@ -115,9 +248,14 @@ export function LoanReceipt({ loan, archive, onClose }: LoanReceiptProps) {
       <div className="shrink-0 p-6 bg-white border-t border-slate-100 flex items-center justify-between print:hidden">
         <Button variant="ghost" onClick={onClose} className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest text-slate-400">Tutup</Button>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" className="rounded-2xl h-12 px-6 space-x-2 border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest">
+          <Button 
+            variant="outline" 
+            onClick={handleSavePDF} 
+            disabled={isGenerating}
+            className="rounded-2xl h-12 px-6 space-x-2 border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest"
+          >
             <Download size={16} />
-            <span>Simpan PDF</span>
+            <span>{isGenerating ? "Sedang Mengunduh..." : "Simpan PDF"}</span>
           </Button>
           <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-500 rounded-2xl h-12 px-8 space-x-2 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20">
             <Printer size={16} />

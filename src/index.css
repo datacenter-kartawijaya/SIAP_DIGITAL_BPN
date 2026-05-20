@@ -80,3 +80,140 @@
   transform: translateY(0);
   transition: opacity 300ms, transform 300ms;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* Make sure html and body clear any fixed viewport or overflow constraints */
+  html, body {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Hide standard UI layouts and dialog decorations that are not printed */
+  #root,
+  .print\:hidden,
+  button,
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-close"] {
+    display: none !important;
+  }
+
+  /* Reset all dialog portals, wrappers, presenters, and scroll bounds to flow statically */
+  div[role="presentation"],
+  div[role="dialog"],
+  [data-slot="dialog-portal"],
+  [data-slot="dialog-portal"] > div,
+  [data-slot="dialog-content"],
+  [data-slot="dialog-content"] > div,
+  #receipt-content {
+    position: static !important;
+    display: block !important;
+    float: none !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  /* Style the receipt print card for static block alignment on the physical page canvas */
+  #receipt-download-card {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Maintain layout columns and grid blocks inside our receipt container */
+  #receipt-download-card .grid {
+    display: grid !important;
+  }
+  #receipt-download-card .flex {
+    display: flex !important;
+  }
+
+  #receipt-download-card * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force solid hex styles for standard contrast without color extraction variables */
+  .text-slate-900, h1, h2, h3, h4, .font-black {
+    color: #0f172a !important;
+  }
+  .text-slate-700 {
+    color: #334155 !important;
+  }
+  .text-slate-500 {
+    color: #4b5563 !important;
+  }
+  .text-slate-400 {
+    color: #6b7280 !important;
+  }
+  .text-slate-300 {
+    color: #9ca3af !important;
+  }
+  .text-blue-600 {
+    color: #2563eb !important;
+  }
+  .text-red-600 {
+    color: #dc2626 !important;
+  }
+
+  .bg-slate-50 {
+    background-color: #f8fafc !important;
+  }
+  .bg-white {
+    background-color: #ffffff !important;
+  }
+
+  .border-slate-900 {
+    border-color: #0f172a !important;
+  }
+  .border-slate-100 {
+    border-color: #f1f5f9 !important;
+  }
+  .border-slate-50, .border-slate-200 {
+    border-color: #e2e8f0 !important;
+  }
+
+  .border-b-2 {
+    border-bottom: 2px solid #0f172a !important;
+  }
+  .border-b {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  .border-t {
+    border-top: 1px solid #e2e8f0 !important;
+  }
+}

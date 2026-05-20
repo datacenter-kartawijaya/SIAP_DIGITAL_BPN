@@ -128,201 +128,324 @@ export function ArchiveForm({ onSubmit, initialValues, type }: ArchiveFormProps)
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleInternalSubmit)} className="space-y-10">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
-          <CardSection title="Informasi Identitas">
+      <form onSubmit={form.handleSubmit(handleInternalSubmit)} className="space-y-8">
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 lg:p-10 shadow-sm ring-1 ring-slate-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+            
+            {/* LEFT COLUMN - IDENTITAS DOKUMEN */}
             <div className="space-y-6">
+              <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em] pb-2 border-b-2 border-blue-600 inline-block">
+                Detail Identitas Data Arsip
+              </h3>
+
+              {/* 1. Jenis Arsip (Read-only / Display) */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Jenis Arsip</label>
+                <Input 
+                  value={type === 'BUKU_TANAH' ? "Buku Tanah" : type === 'WARKAH' ? "Data Warkah" : "Surat Ukur"} 
+                  disabled 
+                  className="h-12 rounded-xl bg-slate-50 border-none text-xs font-black text-slate-600 tracking-wider uppercase px-4" 
+                />
+              </div>
+
+              {/* CONDITIONAL SPECIFIC FIELDS FOR BUKU_TANAH */}
+              {type === 'BUKU_TANAH' && (
+                <>
+                  {/* 2. No. HAK */}
+                  <FormField
+                    control={form.control}
+                    name="noHak"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">No. HAK</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CONTOH: 5004" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 3. Jenis HAK */}
+                  <FormField
+                    control={form.control}
+                    name="jenisHak"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Jenis HAK</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
+                              <SelectValue placeholder="PILIH JENIS HAK" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                            {JENIS_HAK.map(h => (
+                              <SelectItem key={h} value={h} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 4. Nama Pemegang HAK */}
+                  <FormField
+                    control={form.control}
+                    name="namaPemegangHak"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nama Pemegang HAK</FormLabel>
+                        <FormControl>
+                          <Input placeholder="NAMA LENGKAP" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs focus:ring-4 focus:ring-blue-50 transition-all font-bold placeholder:text-slate-300 shadow-sm uppercase" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 5. No. SU */}
+                  <FormField
+                    control={form.control}
+                    name="noSU"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">No. SU</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CONTOH: 5" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* CONDITIONAL SPECIFIC FIELDS FOR WARKAH */}
+              {type === 'WARKAH' && (
+                <>
+                  {/* 2. No. DI 208 */}
+                  <FormField
+                    control={form.control}
+                    name="noDI208"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">No. DI 208</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CONTOH: 101" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 3. Nama Pemegang HAK */}
+                  <FormField
+                    control={form.control}
+                    name="namaPemegangHak"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nama Pemegang HAK</FormLabel>
+                        <FormControl>
+                          <Input placeholder="NAMA LENGKAP" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs focus:ring-4 focus:ring-blue-50 transition-all font-bold placeholder:text-slate-300 shadow-sm uppercase" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 4. Jenis Kegiatan */}
+                  <FormField
+                    control={form.control}
+                    name="jenisKegiatan"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Jenis Kegiatan</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
+                              <SelectValue placeholder="PILIH JENIS KEGIATAN" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                            {JENIS_KEGIATAN.map(k => (
+                              <SelectItem key={k} value={k} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{k}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 5. Tahun SU */}
+                  <FormField
+                    control={form.control}
+                    name="tahun"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Tahun SU</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CONTOH: 2022" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* CONDITIONAL SPECIFIC FIELDS FOR SURAT_UKUR */}
+              {type === 'SURAT_UKUR' && (
+                <>
+                  {/* 2. No. SU */}
+                  <FormField
+                    control={form.control}
+                    name="noSU"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nomor SU</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CONTOH: 12345" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 3. Tahun SU */}
+                  <FormField
+                    control={form.control}
+                    name="tahunSU"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Tahun SU</FormLabel>
+                        <FormControl>
+                          <Input placeholder="YYYY" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 4. Nama Pemegang Hak */}
+                  <FormField
+                    control={form.control}
+                    name="namaPemegangHak"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nama Pemegang HAK</FormLabel>
+                        <FormControl>
+                          <Input placeholder="NAMA LENGKAP" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs focus:ring-4 focus:ring-blue-50 transition-all font-bold placeholder:text-slate-300 shadow-sm uppercase" />
+                        </FormControl>
+                        <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+            </div>
+
+            {/* RIGHT COLUMN - LOKASI, KETERANGAN & PENYIMPANAN (RAK/SHAFT/BOKS) */}
+            <div className="space-y-6">
+              <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.3em] pb-2 border-b-2 border-blue-600 inline-block">
+                Wilayah &amp; Posisi Penyimpanan
+              </h3>
+
+              {/* 5. Tahun SU (for Buku Tanah - moves to RHS for balancing) */}
+              {type === 'BUKU_TANAH' && (
+                <FormField
+                  control={form.control}
+                  name="tahunSU"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Tahun SU</FormLabel>
+                      <FormControl>
+                        <Input placeholder="CONTOH: 2014" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
+                      </FormControl>
+                      <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* 6. Kecamatan */}
               <FormField
                 control={form.control}
-                name="namaPemegangHak"
+                name="kecamatan"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nama Pemegang Hak</FormLabel>
+                    <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Kecamatan</FormLabel>
+                    <Select onValueChange={(val) => {
+                      field.onChange(val);
+                      form.setValue("kelurahan", ""); 
+                    }} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
+                          <SelectValue placeholder={loadingLocs ? "..." : "PILIH KECAMATAN"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                        {kecamatans.map(k => (
+                          <SelectItem key={k.id} value={k.id} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{k.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                  </FormItem>
+                )}
+              />
+
+              {/* 7. Kelurahan/Desa */}
+              <FormField
+                control={form.control}
+                name="kelurahan"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Kelurahan/Desa</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!selectedKecId}>
+                      <FormControl>
+                        <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold disabled:bg-slate-50 disabled:border-slate-100">
+                          <SelectValue placeholder="PILIH KELURAHAN/DESA" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                        {filteredKelurahans.map(k => (
+                          <SelectItem key={k.id} value={k.id} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{k.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
+                  </FormItem>
+                )}
+              />
+
+              {/* 8. Keterangan */}
+              <FormField
+                control={form.control}
+                name="keterangan"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Keterangan</FormLabel>
                     <FormControl>
-                      <Input placeholder="NAMA LENGKAP PADA SERTIFIKAT" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs focus:ring-4 focus:ring-blue-50 transition-all font-bold placeholder:text-slate-300 shadow-sm" />
+                      <Input placeholder="CONTOH: SIMPAN / RUSAK / PINJAM" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm uppercase px-4" />
                     </FormControl>
                     <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {type === 'BUKU_TANAH' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="noHak"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nomor HAK</FormLabel>
-                          <FormControl>
-                            <Input placeholder="5004" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
-                          </FormControl>
-                          <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="jenisHak"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Jenis HAK</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
-                                <SelectValue placeholder="PILIH" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
-                              {JENIS_HAK.map(h => (
-                                <SelectItem key={h} value={h} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{h}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
-
-                {type === 'SURAT_UKUR' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="noSU"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Nomor SU</FormLabel>
-                          <FormControl>
-                            <Input placeholder="12345" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
-                          </FormControl>
-                          <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="tahunSU"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Tahun SU</FormLabel>
-                          <FormControl>
-                            <Input placeholder="YYYY" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
-                          </FormControl>
-                          <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
-
-                {type === 'WARKAH' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="noDI208"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">No. DI 208</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nomor DI" {...field} className="h-12 rounded-xl bg-white border-slate-200 text-xs font-bold shadow-sm" />
-                          </FormControl>
-                          <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="jenisKegiatan"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Kegiatan</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
-                                <SelectValue placeholder="PILIH" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
-                              {JENIS_KEGIATAN.map(k => (
-                                <SelectItem key={k} value={k} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{k}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
-          </CardSection>
-
-          <CardSection title="Lokasi Penyimpanan">
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="kecamatan"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Kecamatan</FormLabel>
-                      <Select onValueChange={(val) => {
-                        field.onChange(val);
-                        form.setValue("kelurahan", ""); 
-                      }} value={field.value || ""}>
-                        <FormControl>
-                          <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
-                            <SelectValue placeholder={loadingLocs ? "..." : "PILIH"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
-                          {kecamatans.map(k => (
-                            <SelectItem key={k.id} value={k.id} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{k.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="kelurahan"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] ml-1">Kelurahan/Desa</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={!selectedKecId}>
-                        <FormControl>
-                          <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 text-xs shadow-sm font-bold">
-                            <SelectValue placeholder="PILIH" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
-                          {filteredKelurahans.map(k => (
-                            <SelectItem key={k.id} value={k.id} className="text-xs focus:bg-blue-50 font-semibold py-2 cursor-pointer">{k.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-[9px] font-medium text-red-500 ml-1" />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
+              {/* 9. Rak, Shaft, Boks (Symmetrical 3-Column side-by-side Layout) */}
+              <div className="grid grid-cols-3 gap-4 pt-1 pointer-events-auto">
                 <FormField
                   control={form.control}
                   name="rak"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] text-center">Rak</FormLabel>
+                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] text-center block">Rak</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="A" className="h-12 rounded-xl bg-white border-slate-200 text-xs uppercase font-black text-center focus:ring-4 focus:ring-blue-50 transition-all shadow-sm" />
+                        <Input {...field} placeholder="1" className="h-12 rounded-xl bg-white border-slate-200 text-xs uppercase font-black text-center focus:ring-4 focus:ring-blue-50 transition-all shadow-sm" />
                       </FormControl>
                       <FormMessage className="text-[9px] font-medium text-red-500 text-center" />
                     </FormItem>
@@ -333,7 +456,7 @@ export function ArchiveForm({ onSubmit, initialValues, type }: ArchiveFormProps)
                   name="shaft"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] text-center">Shaft</FormLabel>
+                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] text-center block">Shaft</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="1" className="h-12 rounded-xl bg-white border-slate-200 text-xs uppercase font-black text-center focus:ring-4 focus:ring-blue-50 transition-all shadow-sm" />
                       </FormControl>
@@ -346,25 +469,25 @@ export function ArchiveForm({ onSubmit, initialValues, type }: ArchiveFormProps)
                   name="boks"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] text-center">
-                        {type === 'WARKAH' ? 'Boks' : 'Bundel'}
-                      </FormLabel>
+                      <FormLabel className="text-[10px] font-bold uppercase text-slate-400 tracking-[0.2em] text-center block">Boks</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="01" className="h-12 rounded-xl bg-white border-slate-200 text-xs uppercase font-black text-center focus:ring-4 focus:ring-blue-50 transition-all shadow-sm" />
+                        <Input {...field} placeholder="1" className="h-12 rounded-xl bg-white border-slate-200 text-xs uppercase font-black text-center focus:ring-4 focus:ring-blue-50 transition-all shadow-sm" />
                       </FormControl>
                       <FormMessage className="text-[9px] font-medium text-red-500 text-center" />
                     </FormItem>
                   )}
                 />
               </div>
+
             </div>
-          </CardSection>
+
+          </div>
         </div>
 
-        <div className="flex justify-end pt-8 border-t border-slate-100 mb-6">
-           <Button type="submit" className="w-full sm:w-auto bg-[#1e3a8a] hover:bg-[#1e40af] px-16 rounded-xl text-xs font-bold uppercase tracking-[0.3em] text-white transition-all h-14 shadow-2xl shadow-blue-900/30 active:scale-95">
-              Simpan Data Berkas
-           </Button>
+        <div className="flex justify-end pt-4 border-t border-slate-100">
+          <Button type="submit" className="w-full sm:w-auto bg-[#1e3a8a] hover:bg-[#1e40af] px-16 rounded-xl text-xs font-black uppercase tracking-[0.2em] text-white transition-all h-14 shadow-xl shadow-blue-900/10 active:scale-95 leading-none">
+            Simpan Registrasi Berkas
+          </Button>
         </div>
       </form>
     </Form>

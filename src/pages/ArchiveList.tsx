@@ -474,7 +474,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
       </Dialog>
 
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="max-w-3xl sm:rounded-[2.5rem] border-none shadow-2xl p-0 w-[95vw] sm:w-full bg-white h-[90vh]">
+        <DialogContent className="max-w-3xl sm:rounded-[2.5rem] border-none shadow-2xl p-0 w-[95vw] sm:w-full bg-white h-[90vh] sm:h-[85vh] max-h-[90vh] overflow-hidden flex flex-col">
           {activeLoan && loanArchive && (
             <LoanReceipt 
               loan={activeLoan}
@@ -486,7 +486,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
       </Dialog>
 
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="max-w-2xl sm:rounded-[2.5rem] border-none shadow-2xl p-0 w-[95vw] sm:w-full bg-white h-[80vh]">
+        <DialogContent className="max-w-2xl sm:rounded-[2.5rem] border-none shadow-2xl p-0 w-[95vw] sm:w-full bg-white h-[80vh] sm:h-[75vh] max-h-[85vh] overflow-hidden flex flex-col">
           {historyArchive && (
             <LoanHistoryDialog 
               archive={historyArchive}
