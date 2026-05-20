@@ -4,9 +4,8 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Printer, Download, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 interface LoanReceiptProps {
   loan: Loan;
@@ -15,144 +14,153 @@ interface LoanReceiptProps {
 }
 
 export function LoanReceipt({ loan, archive, onClose }: LoanReceiptProps) {
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleSavePDF = async () => {
-    const element = document.getElementById("receipt-download-card");
-    if (!element) {
-      toast.error("Elemen tanda terima tidak ditemukan");
-      return;
-    }
-
-    setIsGenerating(true);
-    const toastId = toast.loading("Sedang memproses dan mengunduh berkas PDF...");
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById("receipt-card");
+    if (!element) return;
 
     try {
-      // Small timeout to let any rendering settle
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      setIsDownloading(true);
 
-      // Capture the card element using html2canvas with special workarounds for oklch colors
       const canvas = await html2canvas(element, {
-        scale: 2, // 2x resolution for super crisp text and logo
+        scale: 2, // improve resolution
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
         onclone: (clonedDoc) => {
-          // 1. Sanitize style tags of the cloned document by replacing oklch with hex colors
-          const styles = clonedDoc.querySelectorAll("style");
-          styles.forEach((style) => {
-            style.innerHTML = style.innerHTML.replace(/oklch\([^)]+\)/g, (match) => {
-              if (match.includes("0.97") || match.includes("0.96") || match.includes("0.95")) return "#f8fafc";
-              if (match.includes("253.514") || match.includes("253.5") || match.includes("250")) return "#2563eb";
-              if (match.includes("0.573")) return "#2563eb";
-              return "#1e293b";
+          const oklchToRgb = (lVal: string, cVal: string, hVal: string, aVal: string = "1") => {
+            let l = lVal.includes("%") ? parseFloat(lVal) / 100 : parseFloat(lVal);
+            let c = parseFloat(cVal) || 0;
+            let h = parseFloat(hVal) || 0;
+
+            const hRad = (h * Math.PI) / 180;
+            const aValNum = aVal !== undefined && aVal !== null ? parseFloat(aVal) : 1;
+            const okLabA = c * Math.cos(hRad);
+            const okLabB = c * Math.sin(hRad);
+
+            const l_ = l + 0.3963377774 * okLabA + 0.2158037573 * okLabB;
+            const m_ = l - 0.1055613458 * okLabA - 0.0638541728 * okLabB;
+            const s_ = l - 0.0894841775 * okLabA - 1.2914855480 * okLabB;
+
+            const lFinal = l_ * l_ * l_;
+            const mFinal = m_ * m_ * m_;
+            const sFinal = s_ * s_ * s_;
+
+            const rLin = 4.0767416621 * lFinal - 3.3077115913 * mFinal + 0.2309699292 * sFinal;
+            const gLin = -1.2684380046 * lFinal + 2.6097574011 * mFinal - 0.3413193965 * sFinal;
+            const bLin = -0.0041960863 * lFinal - 0.7034186147 * mFinal + 1.7076147010 * sFinal;
+
+            const gamma = (v: number) => {
+              return v > 0.0031308 ? 1.055 * Math.pow(v, 1 / 2.4) - 0.055 : 12.92 * v;
+            };
+
+            const r = Math.max(0, Math.min(255, Math.round(gamma(rLin) * 255)));
+            const g = Math.max(0, Math.min(255, Math.round(gamma(gLin) * 255)));
+            const b = Math.max(0, Math.min(255, Math.round(gamma(bLin) * 255)));
+
+            if (aValNum !== 1 && !isNaN(aValNum)) {
+              return `rgba(${r}, ${g}, ${b}, ${aValNum})`;
+            }
+            return `rgb(${r}, ${g}, ${b})`;
+          };
+
+          const replaceOklchWithRgb = (cssText: string): string => {
+            const oklchRegex = /oklch\s*\(\s*([^/,\)\s]+)[,\s]+([^/,\)\s]+)[,\s]+([^/,\)\s]+)(?:\s*[\/\s,]\s*([^,\)\s]+))?\s*\)/gi;
+            return cssText.replace(oklchRegex, (match, l, c, h, a) => {
+              try {
+                return oklchToRgb(l, c, h, a);
+              } catch {
+                return "rgb(120, 120, 120)";
+              }
             });
+          };
+
+          // 1. Convert any inline styles in any element
+          clonedDoc.querySelectorAll("[style]").forEach((el) => {
+            const style = el.getAttribute("style");
+            if (style && style.toLowerCase().includes("oklch")) {
+              el.setAttribute("style", replaceOklchWithRgb(style));
+            }
           });
 
-          // 2. Sanitize all elements in the cloned document by setting safe hex inline styles 
-          const allElements = clonedDoc.querySelectorAll("*");
-          allElements.forEach((node) => {
-            const htmlEl = node as HTMLElement;
-            if (htmlEl.style) {
-              if (htmlEl.style.cssText) {
-                htmlEl.style.cssText = htmlEl.style.cssText.replace(/oklch\([^)]+\)/g, "#1e293b");
-              }
-              
-              let classStr = "";
-              if (typeof htmlEl.getAttribute === "function") {
-                classStr = htmlEl.getAttribute("class") || "";
-              } else if (typeof htmlEl.className === "string") {
-                classStr = htmlEl.className;
-              }
-              const classes = classStr ? classStr.split(/\s+/) : [];
-              
-              // Apply hard colors to avoid Tailwind V4 custom oklch variables lookup in computedStyle
-              if (classes.includes("bg-white")) htmlEl.style.backgroundColor = "#ffffff";
-              if (classes.includes("bg-slate-50")) htmlEl.style.backgroundColor = "#f8fafc";
-              if (classes.includes("bg-blue-600")) htmlEl.style.backgroundColor = "#2563eb";
-              
-              if (classes.includes("text-slate-900")) htmlEl.style.color = "#0f172a";
-              if (classes.includes("text-slate-700")) htmlEl.style.color = "#334155";
-              if (classes.includes("text-slate-500")) htmlEl.style.color = "#64748b";
-              if (classes.includes("text-slate-400")) htmlEl.style.color = "#94a3b8";
-              if (classes.includes("text-slate-300")) htmlEl.style.color = "#cbd5e1";
-              if (classes.includes("text-blue-600")) htmlEl.style.color = "#2563eb";
-              if (classes.includes("text-red-600")) htmlEl.style.color = "#dc2626";
+          // 2. Convert raw <style> tags
+          clonedDoc.querySelectorAll("style").forEach((styleEl) => {
+            if (styleEl.textContent && styleEl.textContent.toLowerCase().includes("oklch")) {
+              styleEl.textContent = replaceOklchWithRgb(styleEl.textContent);
+            }
+          });
 
-              if (classes.includes("border-slate-100")) {
-                htmlEl.style.borderColor = "#f1f5f9";
-                htmlEl.style.borderStyle = "solid";
-                htmlEl.style.borderWidth = "1px";
+          // 3. Convert rules within stylesheet objects
+          Array.from(clonedDoc.styleSheets).forEach((sheet) => {
+            try {
+              let rulesText = "";
+              const rules = Array.from(sheet.cssRules);
+              let hasOklch = false;
+              rules.forEach((rule) => {
+                let txt = rule.cssText;
+                if (txt.toLowerCase().includes("oklch")) {
+                  hasOklch = true;
+                  txt = replaceOklchWithRgb(txt);
+                }
+                rulesText += txt + "\n";
+              });
+              if (hasOklch) {
+                const styleEl = clonedDoc.createElement("style");
+                styleEl.textContent = rulesText;
+                clonedDoc.head.appendChild(styleEl);
+                if (sheet.ownerNode && sheet.ownerNode.parentNode) {
+                  sheet.ownerNode.parentNode.removeChild(sheet.ownerNode);
+                }
               }
-              if (classes.includes("border-slate-50")) {
-                htmlEl.style.borderColor = "#f8fafc";
-                htmlEl.style.borderStyle = "solid";
-                htmlEl.style.borderWidth = "1px";
-              }
-              if (classes.includes("border-b-2") && classes.includes("border-slate-900")) {
-                htmlEl.style.borderBottom = "2px solid #0f172a";
-              }
-              if (classes.includes("border-b") && classes.includes("border-slate-900")) {
-                htmlEl.style.borderBottom = "1px solid #0f172a";
-              }
-              if (classes.includes("border-t") && classes.includes("border-slate-50")) {
-                htmlEl.style.borderTop = "1px solid #f8fafc";
-              }
+            } catch (e) {
+              // Ignore cross-origin error
             }
           });
         },
       });
 
       const imgData = canvas.toDataURL("image/png");
-
-      // Calculate A4 dimensions (210mm x 297mm)
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
 
-      // Maintain margins and size nicely
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const margin = 10; // 10mm margins
-      const targetWidth = pdfWidth - (margin * 2);
-      const targetHeight = (canvas.height * targetWidth) / canvas.width;
 
-      // Add image to cover properly
-      pdf.addImage(imgData, "PNG", margin, margin, targetWidth, targetHeight, undefined, "FAST");
+      const margin = 12; // 12mm page margin
+      const usableWidth = pdfWidth - (margin * 2);
+      const imgWidth = usableWidth;
+      const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
-      const fileName = `bukti_pinjam_${loan.receiptNo ? loan.receiptNo.replace(/\//g, "-") : "tanda_terima"}.pdf`;
-      pdf.save(fileName);
+      // Center vertically if it fits perfectly on A4, otherwise align with top margin
+      const yOffset = imgHeight < (pdfHeight - margin * 2)
+        ? (pdfHeight - imgHeight) / 2
+        : margin;
 
-      toast.success("PDF Berhasil Diunduh!", {
-        id: toastId,
-        description: `Berkas ${fileName} telah disimpan.`,
-      });
-    } catch (err: any) {
-      console.error("Gagal melakukan ekspor PDF:", err);
-      toast.error("Gagal mengunduh berkas PDF", {
-        id: toastId,
-        description: err.message || "Silakan coba lagi.",
-      });
+      pdf.addImage(imgData, "PNG", margin, yOffset, imgWidth, imgHeight);
+
+      // Sanitize print receipt name for the file name
+      const safeReceiptNo = loan.receiptNo.replace(/[^a-zA-Z0-9-]/g, "_");
+      pdf.save(`Bukti_Pinjam_${safeReceiptNo}.pdf`);
+    } catch (error) {
+      console.error("Gagal mengunduh PDF:", error);
     } finally {
-      setIsGenerating(false);
+      setIsDownloading(false);
     }
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-8 bg-slate-50 print:bg-white print:p-0" id="receipt-content">
-        <div 
-          id="receipt-download-card"
-          className="max-w-2xl mx-auto bg-white shadow-2xl rounded-[2rem] p-10 border border-slate-100 print:shadow-none print:border-none print:rounded-none"
-        >
+        <div id="receipt-card" className="max-w-2xl mx-auto bg-white shadow-2xl rounded-[2rem] p-10 border border-slate-100 print:shadow-none print:border-none print:rounded-none">
           {/* Header */}
           <div className="flex items-center justify-between border-b-2 border-slate-900 pb-8 mb-8">
             <div className="flex items-center space-x-4">
@@ -217,8 +225,8 @@ export function LoanReceipt({ loan, archive, onClose }: LoanReceiptProps) {
                       <p className="text-xs font-black text-slate-700">{archive.shaft}</p>
                    </div>
                    <div className="bg-slate-50 rounded-xl p-3 text-center">
-                      <p className="text-[7px] font-black text-slate-300 uppercase mb-1">BOKS</p>
-                      <p className="text-xs font-black text-slate-700">{archive.boks || archive.bundel || "-"}</p>
+                      <p className="text-[7px] font-black text-slate-300 uppercase mb-1">BNDL</p>
+                      <p className="text-xs font-black text-slate-700">{archive.bundel || "-"}</p>
                    </div>
                 </div>
               </div>
@@ -250,12 +258,12 @@ export function LoanReceipt({ loan, archive, onClose }: LoanReceiptProps) {
         <div className="flex items-center space-x-3">
           <Button 
             variant="outline" 
-            onClick={handleSavePDF} 
-            disabled={isGenerating}
-            className="rounded-2xl h-12 px-6 space-x-2 border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest"
+            onClick={handleDownloadPdf}
+            disabled={isDownloading}
+            className="rounded-2xl h-12 px-6 space-x-2 border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download size={16} />
-            <span>{isGenerating ? "Sedang Mengunduh..." : "Simpan PDF"}</span>
+            <Download size={16} className={isDownloading ? "animate-bounce text-blue-600" : ""} />
+            <span>{isDownloading ? "Mengunduh..." : "Simpan PDF"}</span>
           </Button>
           <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-500 rounded-2xl h-12 px-8 space-x-2 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20">
             <Printer size={16} />

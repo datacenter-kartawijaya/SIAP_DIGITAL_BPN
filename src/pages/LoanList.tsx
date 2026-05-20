@@ -282,11 +282,11 @@ export function LoanList() {
                            )}
 
                            <DropdownMenu>
-                              <DropdownMenuTrigger render={
-                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl">
+                              <DropdownMenuTrigger render={(triggerProps) => (
+                                <Button {...triggerProps} variant="ghost" size="icon" className="h-9 w-9 rounded-xl">
                                   <MoreVertical size={14} className="text-slate-400" />
                                 </Button>
-                              } />
+                              )} />
                               <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-xl p-1.5 w-40">
                                 <DropdownMenuItem 
                                   className="rounded-xl cursor-pointer font-bold text-[10px] uppercase tracking-widest text-slate-600 focus:bg-blue-50 focus:text-blue-600"
@@ -406,7 +406,7 @@ export function LoanList() {
 
       {/* Receipt Re-printing Dialog */}
       <Dialog open={!!receiptLoan} onOpenChange={() => setReceiptLoan(null)}>
-        <DialogContent className="max-w-4xl sm:rounded-[2.5rem] border-none shadow-2xl p-0 w-full sm:w-[95vw] bg-white h-[90vh] sm:h-[85vh] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl sm:rounded-[2.5rem] border-none shadow-2xl p-0 w-full sm:w-[95vw] bg-white h-screen sm:h-[90vh] overflow-hidden flex flex-col">
           {receiptLoan && (
             <LoanReceipt 
               loan={receiptLoan.loan}
