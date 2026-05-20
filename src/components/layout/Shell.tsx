@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
   { title: "Notifikasi", icon: Bell, id: "notifications" },
   { title: "Manajemen User", icon: Users, id: "users" },
   { title: "Master Wilayah", icon: MapIcon, id: "locations" },
+  { title: "Database Backup", icon: Database, id: "database-sync" },
 ];
 
 function Clock() {
@@ -74,6 +75,9 @@ export function Shell({ children, activeId, onNavigate, user, onLogout }: ShellP
   const filteredNavItems = navItems.filter(item => {
     if (item.id === 'users' || item.id === 'locations') {
       return user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+    }
+    if (item.id === 'database-sync') {
+      return user?.role === 'SUPER_ADMIN';
     }
     return true;
   });

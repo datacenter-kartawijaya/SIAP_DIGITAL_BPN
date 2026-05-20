@@ -11,6 +11,7 @@ import { LoanList } from './pages/LoanList';
 import { UserManagement } from './pages/UserManagement';
 import { LocationManagement } from './pages/LocationManagement';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { DatabaseBackup } from './pages/DatabaseBackup';
 import { Login } from './components/auth/Login';
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from './lib/auth';
@@ -50,6 +51,8 @@ export default function App() {
         return <UserManagement />;
       case 'locations':
         return <LocationManagement />;
+      case 'database-sync':
+        return <DatabaseBackup />;
       default:
         return <Dashboard />;
     }

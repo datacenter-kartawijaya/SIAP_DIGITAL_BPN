@@ -33,7 +33,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  FileSpreadsheet
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -55,6 +56,7 @@ import { useLoans } from "../lib/loanHooks";
 import { CameraCapture } from "@/src/components/archive/CameraCapture";
 import { LoanReceipt } from "@/src/components/archive/LoanReceipt";
 import { LoanHistoryDialog } from "@/src/components/archive/LoanHistoryDialog";
+import { ExcelImportDialog } from "@/src/components/archive/ExcelImportDialog";
 import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -105,6 +107,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
   const [isLoanOpen, setIsLoanOpen] = React.useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
+  const [isImportOpen, setIsImportOpen] = React.useState(false);
   const [activeLoan, setActiveLoan] = React.useState<Loan | null>(null);
   const [historyArchive, setHistoryArchive] = React.useState<Archive | null>(null);
   const [loanArchive, setLoanArchive] = React.useState<Archive | null>(null);
@@ -608,6 +611,13 @@ export function ArchiveList({ type }: ArchiveListProps) {
               title="Ekspor ke Excel Lengkap (.xlsx)"
             >
               <Download size={20} />
+            </button>
+            <button 
+              onClick={() => setIsImportOpen(true)} 
+              className="p-1.5 text-indigo-600 hover:bg-slate-100 rounded-md transition-colors" 
+              title="Impor dari Excel (.xls / .xlsx)"
+            >
+              <FileSpreadsheet size={20} />
             </button>
             <button 
               onClick={() => toast.info("Gunakan menu detail baris tabel untuk mencetak slip/tanda bukti khusus.")} 
@@ -1343,6 +1353,15 @@ export function ArchiveList({ type }: ArchiveListProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      <ExcelImportDialog 
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        type={type}
+        onCompleted={() => {
+          toast.success("Database berhasil disinkronkan dengan data Excel baru!");
+        }}
+      />
     </div>
   );
 }

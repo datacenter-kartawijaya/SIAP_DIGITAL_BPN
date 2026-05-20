@@ -149,7 +149,7 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read, create, update: if isStaff();
+      allow read, create, update: if isSignedIn();
       allow delete: if isAdmin();
     }
   }
