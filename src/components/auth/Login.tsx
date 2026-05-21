@@ -299,6 +299,34 @@ export function Login() {
                 <img src="/Logo_BPN.png" alt="BPN" className="h-10 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700 cursor-pointer" />
                 <div className="h-8 w-px bg-white/10"></div>
                 <p className="text-white/30 text-[10px] font-bold leading-tight">
+                   Kementerian Agraria dan Tata Ruang<br/>
+                   Badan Pertanahan Nasional
+                </p>
+             </div>
+
+             <div className="pt-4 border-t border-white/5 flex items-center space-x-4">
+                <img 
+                   src="/logo-kwm.png" 
+                   alt="CV. Kartawijaya Mandiri" 
+                   className="h-8 opacity-40 hover:opacity-100 transition-all duration-700 cursor-pointer object-contain" 
+                   referrerPolicy="no-referrer"
+                   onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                   }}
+                />
+                <div>
+                   <p className="text-[8px] font-black tracking-[0.2em] text-white/20 uppercase font-mono">Developer Partner</p>
+                   <p className="text-white/40 text-[10px] font-bold tracking-wide">
+                      CV. Kartawijaya Mandiri
+                   </p>
+                </div>
+             </div>
+          </div>
+          <div className="hidden">
+             <div className="flex items-center space-x-6">
+                <img src="/Logo_BPN.png" alt="BPN" className="h-10 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700 cursor-pointer" />
+                <div className="h-8 w-px bg-white/10"></div>
+                <p className="text-white/30 text-[10px] font-bold leading-tight">
                   Kementerian Agraria dan Tata Ruang<br/>
                   Badan Pertanahan Nasional
                 </p>

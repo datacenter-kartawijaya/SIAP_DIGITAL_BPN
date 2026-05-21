@@ -172,7 +172,7 @@ export function Shell({ children, activeId, onNavigate, user, onLogout }: ShellP
             <LogOut size={14} className="mr-3" />
             <span className="text-[9px] font-black uppercase tracking-[0.2em]">Sistem Logout</span>
           </Button>
-          <p className="text-[7px] text-white/10 text-center font-bold uppercase tracking-widest">v2.4.1 Production</p>
+          <p className="text-[7px] text-white/15 text-center font-bold uppercase tracking-widest">Created by CV Kartawijaya Abadi</p>
         </div>
       </aside>
 

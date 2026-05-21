@@ -699,7 +699,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
                 </div>
 
                 <div className="md:col-span-3 space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400">Nama Penerima</Label>
+                  <Label className="text-[9px] font-black uppercase text-slate-400">Pemegang Hak</Label>
                   <div className="flex space-x-1">
                     <Input 
                       placeholder="Identitas Nama" 
