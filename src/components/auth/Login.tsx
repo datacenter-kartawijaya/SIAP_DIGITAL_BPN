@@ -257,21 +257,24 @@ export function Login() {
           <div className="absolute inset-0 blueprint-grid opacity-20 pointer-events-none"></div>
           
           <div className="relative z-10">
-             <div className="w-16 h-1 w-20 bg-blue-500 mb-8 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
+             <div className="w-16 h-1 bg-blue-500 mb-8 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
              <motion.div
                animate={{ y: [0, -5, 0] }}
                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
              >
-                <p className="text-white font-medium text-2xl leading-none tracking-tight mb-4 uppercase italic flex items-center">
-                  Secure Archiving
-                  <ShieldCheck size={20} className="ml-3 text-blue-400" />
+                <h2 className="text-white font-black text-3.5xl leading-none tracking-tight mb-2 uppercase flex items-center">
+                  SIAP DIGITAL
+                  <ShieldCheck size={24} className="ml-3 text-blue-400" />
+                </h2>
+                <p className="text-blue-500/80 text-[10px] font-bold uppercase tracking-[0.25em] mb-4">
+                  Sistem Arsip Digital
                 </p>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-10 font-medium">
-                  Basis data terenkripsi untuk keamanan informasi pertanahan negara. Setiap akses tercatat secara logistik dalam sistem pusat.
+                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-sm mb-12 font-medium">
+                  Sistem manajemen arsip modern yang dirancang untuk digitalisasi, penyimpanan, dan pengelolaan arsip pertanahan secara aman, cepat, dan terintegrasi di Kantor Pertanahan Kota Banjarmasin.
                 </p>
              </motion.div>
              
-             <div className="space-y-6">
+             <div className="space-y-6 bg-slate-950/35 p-5 rounded-3xl border border-white/5 backdrop-blur-md">
                 <div className="flex items-center space-x-4">
                    <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
                       <Activity size={20} />
@@ -286,8 +289,26 @@ export function Login() {
                       <Database size={20} />
                    </div>
                    <div>
-                      <p className="text-white text-xs font-black uppercase tracking-wider">Cloud Data</p>
-                      <p className="text-slate-400 text-[10px] font-bold mt-1">Real-time Cloud Sync Active</p>
+                      <p className="text-white text-xs font-black uppercase tracking-wider">Real-time Data</p>
+                      <p className="text-slate-400 text-[10px] font-bold mt-1">Real-time Data Sync Active</p>
+                   </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                   <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-400">
+                      <Lock size={20} />
+                   </div>
+                   <div>
+                      <p className="text-white text-xs font-black uppercase tracking-wider">Keamanan Arsip</p>
+                      <p className="text-slate-400 text-[10px] font-bold mt-1">Enkripsi Berkas & Proteksi Enclave</p>
+                   </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                   <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400">
+                      <UserIcon size={20} />
+                   </div>
+                   <div>
+                      <p className="text-white text-xs font-black uppercase tracking-wider">Audit Trail</p>
+                      <p className="text-slate-400 text-[10px] font-bold mt-1">Log Akses Personel Tersemat Otomatis</p>
                    </div>
                 </div>
              </div>
