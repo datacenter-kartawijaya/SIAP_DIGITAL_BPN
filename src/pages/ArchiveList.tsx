@@ -50,13 +50,14 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Archive, ArchiveType, Loan } from "../types";
+import { Archive, ArchiveType, Loan, Location } from "../types";
 import { useArchives } from "../lib/hooks";
 import { useLoans } from "../lib/loanHooks";
 import { CameraCapture } from "@/src/components/archive/CameraCapture";
 import { LoanReceipt } from "@/src/components/archive/LoanReceipt";
 import { LoanHistoryDialog } from "@/src/components/archive/LoanHistoryDialog";
 import { ExcelImportDialog } from "@/src/components/archive/ExcelImportDialog";
+import { BatchQRDialog } from "@/src/components/archive/BatchQRDialog";
 import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -65,7 +66,7 @@ import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from "motion/react";
 import { JENIS_HAK, JENIS_KEGIATAN } from "@/src/constants";
 import { db, auth } from "../lib/firebase";
-import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp, deleteDoc, onSnapshot } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
 // Real subdistricts and villages falling back if DB loading
@@ -108,6 +109,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
   const [isReceiptOpen, setIsReceiptOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isImportOpen, setIsImportOpen] = React.useState(false);
+  const [isQRGeneratorOpen, setIsQRGeneratorOpen] = React.useState(false);
   const [activeLoan, setActiveLoan] = React.useState<Loan | null>(null);
   const [historyArchive, setHistoryArchive] = React.useState<Archive | null>(null);
   const [loanArchive, setLoanArchive] = React.useState<Archive | null>(null);
@@ -123,16 +125,96 @@ export function ArchiveList({ type }: ArchiveListProps) {
   const [selectedArchiveId, setSelectedArchiveId] = React.useState<string | null>(null);
 
   // -----------------------------
+  // Real-time Master Wilayah Loading from Firestore
+  // -----------------------------
+  const [dbLocations, setDbLocations] = React.useState<Location[]>([]);
+
+  React.useEffect(() => {
+    if (!db) return;
+    const q = collection(db, 'locations');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const locs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Location));
+      setDbLocations(locs);
+    }, (err) => {
+      console.error("Gagal memuat wilayah dari DB: ", err);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Compute dynamic DISTRICT_VILLAGES_MAP merging DB locations and static/default fallbacks
+  const computedDistrictVillagesMap = React.useMemo(() => {
+    // Start with a clone of STATIC fallback map
+    const map: Record<string, string[]> = JSON.parse(JSON.stringify(DISTRICT_VILLAGES_MAP));
+
+    if (dbLocations.length > 0) {
+      const dbKecamatans = dbLocations.filter(l => l.type === 'KECAMATAN');
+      const dbKelurahans = dbLocations.filter(l => l.type === 'KELURAHAN');
+
+      // Add any Kecamatan from DB that is not in the static map
+      dbKecamatans.forEach(kec => {
+        // Find if this kecamatan name (case insensitive) is already in the map
+        const existingKey = Object.keys(map).find(k => k.toLowerCase() === kec.name.toLowerCase());
+        const targetKey = existingKey || kec.name;
+        if (!map[targetKey]) {
+          map[targetKey] = [];
+        }
+
+        // Add corresponding kelurahans for this kecamatan
+        const childKels = dbKelurahans.filter(kel => kel.parentId === kec.id);
+        childKels.forEach(kel => {
+          // Add kel.name if not already present (case insensitive)
+          const alreadyHas = map[targetKey].some(v => v.toLowerCase() === kel.name.toLowerCase());
+          if (!alreadyHas) {
+            map[targetKey].push(kel.name);
+          }
+        });
+      });
+
+      // Also process other Kelurahans that might map to existing static Kecamatan keys
+      dbKelurahans.forEach(kel => {
+        if (kel.parentId) {
+          const parentKec = dbKecamatans.find(k => k.id === kel.parentId);
+          if (parentKec) {
+            const existingKey = Object.keys(map).find(k => k.toLowerCase() === parentKec.name.toLowerCase());
+            if (existingKey) {
+              const alreadyHas = map[existingKey].some(v => v.toLowerCase() === kel.name.toLowerCase());
+              if (!alreadyHas) {
+                map[existingKey].push(kel.name);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Sort villages inside each kecamatan alphabetically
+    Object.keys(map).forEach(key => {
+      map[key] = [...new Set(map[key])].sort();
+    });
+
+    return map;
+  }, [dbLocations]);
+
+  // Compute dynamic KECAMATANS list
+  const computedKecamatans = React.useMemo(() => {
+    return Object.keys(computedDistrictVillagesMap).sort();
+  }, [computedDistrictVillagesMap]);
+
+  // -----------------------------
   // Left panel Search states
   // -----------------------------
   const [searchNo, setSearchNo] = React.useState("");
   const [searchBoks, setSearchBoks] = React.useState("");
   const [searchNama, setSearchNama] = React.useState("");
+  const [searchKecamatan, setSearchKecamatan] = React.useState("");
+  const [searchKelurahan, setSearchKelurahan] = React.useState("");
   
   // Realized filter trigger state (for clicking the "Cari" red button)
   const [filterNo, setFilterNo] = React.useState("");
   const [filterBoks, setFilterBoks] = React.useState("");
   const [filterNama, setFilterNama] = React.useState("");
+  const [filterKecamatan, setFilterKecamatan] = React.useState("");
+  const [filterKelurahan, setFilterKelurahan] = React.useState("");
 
   // -----------------------------
   // Right Entry Form states
@@ -175,22 +257,34 @@ export function ArchiveList({ type }: ArchiveListProps) {
     setSearchNo("");
     setSearchBoks("");
     setSearchNama("");
+    setSearchKecamatan("");
+    setSearchKelurahan("");
     setFilterNo("");
     setFilterBoks("");
     setFilterNama("");
+    setFilterKecamatan("");
+    setFilterKelurahan("");
   }, [type]);
+
+  // Handle search villages list based on searchKecamatan
+  const availableSearchVillages = React.useMemo(() => {
+    if (!searchKecamatan) return [];
+    return computedDistrictVillagesMap[searchKecamatan] || [];
+  }, [searchKecamatan, computedDistrictVillagesMap]);
 
   // Handle villages list based on selected Kecamatan
   const availableVillages = React.useMemo(() => {
     if (!formDataKecamatan) return [];
-    return DISTRICT_VILLAGES_MAP[formDataKecamatan] || [];
-  }, [formDataKecamatan]);
+    return computedDistrictVillagesMap[formDataKecamatan] || [];
+  }, [formDataKecamatan, computedDistrictVillagesMap]);
 
   // Handle Search Cari Function
   const handleCari = () => {
     setFilterNo(searchNo);
     setFilterBoks(searchBoks);
     setFilterNama(searchNama);
+    setFilterKecamatan(searchKecamatan);
+    setFilterKelurahan(searchKelurahan);
     setCurrentPage(1);
   };
 
@@ -222,9 +316,19 @@ export function ArchiveList({ type }: ArchiveListProps) {
         if (!(a.namaPemegangHak || "").toLowerCase().includes(nameLower)) return false;
       }
 
+      // Filter by Kecamatan
+      if (filterKecamatan) {
+        if ((a.kecamatan || "").toLowerCase() !== filterKecamatan.toLowerCase()) return false;
+      }
+
+      // Filter by Kelurahan
+      if (filterKelurahan) {
+        if ((a.kelurahan || "").toLowerCase() !== filterKelurahan.toLowerCase()) return false;
+      }
+
       return true;
     });
-  }, [archives, filterNo, filterBoks, filterNama]);
+  }, [archives, filterNo, filterBoks, filterNama, filterKecamatan, filterKelurahan]);
 
   // Paginated records
   const paginatedItems = React.useMemo(() => {
@@ -606,6 +710,13 @@ export function ArchiveList({ type }: ArchiveListProps) {
               <QrCode size={20} />
             </button>
             <button 
+              onClick={() => setIsQRGeneratorOpen(true)} 
+              className="p-1.5 text-purple-700 hover:bg-slate-50 rounded-md transition-colors" 
+              title="Batch QR Code BPN (Cetak & Unduh)"
+            >
+              <QrCode className="text-purple-600 stroke-[2.5]" size={20} />
+            </button>
+            <button 
               onClick={handleExportExcel} 
               className="p-1.5 text-emerald-700 hover:bg-slate-100 rounded-md transition-colors" 
               title="Ekspor ke Excel Lengkap (.xlsx)"
@@ -667,50 +778,90 @@ export function ArchiveList({ type }: ArchiveListProps) {
                 Pencarian
               </span>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mt-1 items-end">
-                <div className="md:col-span-4 space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400">Jenis Arsip</Label>
-                  <Input 
-                    type="text" 
-                    value={typeText} 
-                    disabled 
-                    className="h-10 text-[11px] font-black bg-slate-50 border-slate-200 text-slate-700 select-none uppercase tracking-wider" 
-                  />
-                </div>
+              <div className="space-y-3 mt-1">
+                {/* Row 1: Document type, Document No, Box/Bundel, Pemegang Hak */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                  <div className="md:col-span-3 space-y-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Jenis Arsip</Label>
+                    <Input 
+                      type="text" 
+                      value={typeText} 
+                      disabled 
+                      className="h-10 text-[11px] font-black bg-slate-50 border-slate-200 text-slate-700 select-none uppercase tracking-wider" 
+                    />
+                  </div>
 
-                <div className="md:col-span-3 space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400">No. Dokumen</Label>
-                  <Input 
-                    placeholder="Contoh: 5004 / 101" 
-                    value={searchNo} 
-                    onChange={(e) => setSearchNo(e.target.value)} 
-                    className="h-10 text-[11px] font-bold border-slate-200" 
-                  />
-                </div>
+                  <div className="md:col-span-3 space-y-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">No. Dokumen</Label>
+                    <Input 
+                      placeholder="Contoh: 5004 / 101" 
+                      value={searchNo} 
+                      onChange={(e) => setSearchNo(e.target.value)} 
+                      className="h-10 text-[11px] font-bold border-slate-200" 
+                    />
+                  </div>
 
-                <div className="md:col-span-2 space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400">Box/Bundel</Label>
-                  <Input 
-                    placeholder="Rak / Bocs" 
-                    value={searchBoks} 
-                    onChange={(e) => setSearchBoks(e.target.value)} 
-                    className="h-10 text-[11px] font-bold border-slate-200" 
-                  />
-                </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Box/Bundel</Label>
+                    <Input 
+                      placeholder="Rak / Bocs" 
+                      value={searchBoks} 
+                      onChange={(e) => setSearchBoks(e.target.value)} 
+                      className="h-10 text-[11px] font-bold border-slate-200" 
+                    />
+                  </div>
 
-                <div className="md:col-span-3 space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400">Pemegang Hak</Label>
-                  <div className="flex space-x-1">
+                  <div className="md:col-span-4 space-y-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Pemegang Hak</Label>
                     <Input 
                       placeholder="Identitas Nama" 
                       value={searchNama} 
                       onChange={(e) => setSearchNama(e.target.value)} 
-                      className="h-10 text-[11px] font-bold border-slate-200" 
+                      className="h-10 text-[11px] font-bold border-slate-200 w-full" 
                     />
+                  </div>
+                </div>
+
+                {/* Row 2: Kecamatan, Kelurahan, Cari Button */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end pt-1">
+                  <div className="md:col-span-5 space-y-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Kecamatan</Label>
+                    <select
+                      value={searchKecamatan}
+                      onChange={(e) => {
+                        setSearchKecamatan(e.target.value);
+                        setSearchKelurahan("");
+                      }}
+                      className="w-full h-10 rounded-lg border border-slate-200 text-[11px] font-bold uppercase px-3 bg-white"
+                    >
+                      <option value="">Semua Kecamatan</option>
+                      {computedKecamatans.map(k => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-5 space-y-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Kelurahan/Desa</Label>
+                    <select
+                      value={searchKelurahan}
+                      onChange={(e) => setSearchKelurahan(e.target.value)}
+                      disabled={!searchKecamatan}
+                      className="w-full h-10 rounded-lg border border-slate-200 text-[11px] font-bold uppercase px-3 bg-white disabled:bg-slate-50 disabled:text-slate-400"
+                    >
+                      <option value="">Semua Kelurahan/Desa</option>
+                      {availableSearchVillages.map(v => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
                     <button 
                       onClick={handleCari}
-                      className="px-4 h-10 bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase tracking-wider rounded-lg shadow-md hover:scale-[1.03] transition-all shrink-0"
+                      className="w-full h-10 bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase tracking-wider rounded-lg shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5"
                     >
+                      <Search size={12} />
                       Cari
                     </button>
                   </div>
@@ -731,6 +882,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
                 <TableHeader className="bg-slate-50/50">
                   <TableRow>
                     <TableHead className="h-11 px-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Status / Jenis</TableHead>
+                    <TableHead className="h-11 px-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Wilayah (Kec/Kel)</TableHead>
                     <TableHead className="h-11 px-4 text-[9px] font-black uppercase tracking-widest text-slate-500">
                       {type === "BUKU_TANAH" ? "No. Hak" : type === "SURAT_UKUR" ? "No. SU" : "No. DI 208"}
                     </TableHead>
@@ -742,7 +894,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
                 <TableBody>
                   {paginatedItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-48 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+                      <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">
                         Data Arsip Kosong / Hasil Cari Tidak Ditemukan
                       </TableCell>
                     </TableRow>
@@ -762,6 +914,18 @@ export function ArchiveList({ type }: ArchiveListProps) {
                         >
                           <TableCell className="px-4 py-3 text-[10px] uppercase font-black">
                             {a.type === "BUKU_TANAH" ? "Buku Tanah" : a.type === "SURAT_UKUR" ? "Surat Ukur" : "Data Warkah"}
+                          </TableCell>
+                          <TableCell className="px-4 py-3">
+                            <div className="flex flex-col text-[9px] uppercase leading-tight">
+                              <span className={cn(
+                                "font-extrabold leading-none",
+                                isSelected ? "text-white animate-pulse" : "text-blue-900"
+                              )}>{a.kelurahan || "-"}</span>
+                              <span className={cn(
+                                "text-[7.5px] font-bold mt-0.5 leading-none",
+                                isSelected ? "text-blue-200" : "text-slate-400"
+                              )}>{a.kecamatan || "-"}</span>
+                            </div>
                           </TableCell>
                           <TableCell className="px-4 py-3 text-[11px] font-mono font-black tracking-tight uppercase">
                             {a.type === "BUKU_TANAH" ? (a.noHak || "-") : a.type === "SURAT_UKUR" ? (a.noSU || "-") : (a.noDI208 || "-")}
@@ -1106,7 +1270,7 @@ export function ArchiveList({ type }: ArchiveListProps) {
                   className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:ring-4 focus:ring-blue-100 text-slate-700 uppercase"
                 >
                   <option value="">-- Pilih --</option>
-                  {KECAMATANS.map(k => (
+                  {computedKecamatans.map(k => (
                     <option key={k} value={k}>{k}</option>
                   ))}
                 </select>
@@ -1361,6 +1525,13 @@ export function ArchiveList({ type }: ArchiveListProps) {
         onCompleted={() => {
           toast.success("Database berhasil disinkronkan dengan data Excel baru!");
         }}
+      />
+
+      <BatchQRDialog
+        isOpen={isQRGeneratorOpen}
+        onClose={() => setIsQRGeneratorOpen(false)}
+        type={type}
+        archives={archives}
       />
     </div>
   );
