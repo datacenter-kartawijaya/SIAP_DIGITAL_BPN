@@ -4,14 +4,7 @@ import {
   signInWithEmailAndPassword, 
   signOut,
 } from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  deleteDoc,
-  serverTimestamp 
-} from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth, db, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from './firebase';
 import { User } from '../types';
 import { handleFirestoreError, OperationType } from './error-handler';
 

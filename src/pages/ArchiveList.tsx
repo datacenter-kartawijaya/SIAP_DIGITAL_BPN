@@ -65,8 +65,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from "motion/react";
 import { JENIS_HAK, JENIS_KEGIATAN } from "@/src/constants";
-import { db, auth } from "../lib/firebase";
-import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp, deleteDoc, onSnapshot } from "firebase/firestore";
+import { db, auth, collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp, deleteDoc, onSnapshot } from "../lib/firebase";
 import * as XLSX from "xlsx";
 
 // Real subdistricts and villages falling back if DB loading

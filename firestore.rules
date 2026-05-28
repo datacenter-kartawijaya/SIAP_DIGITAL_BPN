@@ -1,20 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global Deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Auth Helpers
+    
+    // Authentication Helpers
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isEmailVerified() {
-      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'password');
+    function isBpnEmployee() {
+      return isSignedIn() && 
+             request.auth.token != null &&
+             request.auth.token.email != null && (
+               request.auth.token.email.matches('.*@bpn[.]go[.]id') || 
+               request.auth.token.email == 'admin@bpn.go.id' ||
+               request.auth.token.email == 'datacenter.kartawijaya@gmail.com'
+             );
     }
 
+    function isAdmin() {
+      return isSignedIn() && (request.auth.uid == 'xmuLTnzNj6ZAmsHsN4mLsXSpxiI2' || isBpnEmployee());
+    }
+
+    function isStaff() {
+      return isSignedIn() && (request.auth.uid == 'xmuLTnzNj6ZAmsHsN4mLsXSpxiI2' || isBpnEmployee());
+    }
+
+    // Validation Helpers
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
@@ -27,130 +38,63 @@ service cloud.firestore {
       return resource.data;
     }
 
-    function getRole() {
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userPath) ? get(userPath).data.get('role', null) : null;
-    }
-
-    function isRole(role) {
-      return isSignedIn() && getRole() == role;
-    }
-
-    function isSuperAdmin() {
-      return isRole('SUPER_ADMIN');
-    }
-
-    function hasBpnDomain() {
-      let email = isSignedIn() && 'email' in request.auth.token ? request.auth.token.email : null;
-      return email != null && (
-        email.lower().matches('.*@bpn[.]go[.]id') || 
-        email.lower() == 'admin@bpn.go.id'
-      );
-    }
-
-    function isBpnAdmin() {
-      let email = isSignedIn() && 'email' in request.auth.token ? request.auth.token.email : null;
-      return email != null && email.lower() == 'admin@bpn.go.id';
-    }
-
-    function isEmailPrefix(uid) {
-      let email = isSignedIn() && 'email' in request.auth.token ? request.auth.token.email : null;
-      return email != null && email.lower().matches(uid.lower() + '@.*');
-    }
-
-    // Admin & Staff checks
-    function isAdmin() {
-      return isSignedIn() && (isBpnAdmin() || isRole('SUPER_ADMIN') || isRole('ADMIN'));
-    }
-
-    function isStaff() {
-      return isSignedIn() && (hasBpnDomain() || isRole('SUPER_ADMIN') || isRole('ADMIN') || isRole('PETUGAS_ARSIP'));
-    }
-
-    // Archive Validation
+    // Entities Validations for Secure DB Writing
     function isValidArchive(data) {
       return data.type in ['BUKU_TANAH', 'WARKAH', 'SURAT_UKUR'] &&
              data.namaPemegangHak is string && data.namaPemegangHak.size() > 0 &&
              data.namaPemegangHak.size() <= 255;
     }
 
-    match /archives/{archiveId} {
-      allow get: if isStaff();
-      allow list: if isStaff();
-      allow create: if isStaff() && isValidArchive(incoming());
-      allow update: if isStaff() && isValidArchive(incoming());
-      allow delete: if isAdmin();
-    }
-
-    // Loan Validation
     function isValidLoan(data) {
       return data.archiveId is string && data.archiveId.size() > 0 &&
              data.borrowerName is string && data.borrowerName.size() > 0 &&
              data.status in ['Active', 'Returned', 'Overdue'] &&
              data.loanDate is string &&
-             data.expectedReturnDate is string &&
-             data.createdBy is string;
+             data.expectedReturnDate is string;
     }
 
-    match /loans/{loanId} {
-      allow get: if isStaff();
-      allow list: if isStaff();
-      allow create: if isStaff() && isValidLoan(incoming()) && incoming().createdBy == request.auth.uid;
-      allow update: if isStaff() && isValidLoan(incoming()) && (
-        // Only allow certain fields to change unless Admin
-        isAdmin() || (
-          // Standard update for returning loan
-          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'actualReturnDate', 'returnedBy', 'notes', 'reminderSent'])
-        )
-      );
+    function isValidNotification(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 500 &&
+             data.body is string && data.body.size() > 0 && data.body.size() <= 2000 &&
+             data.type is string && data.type.size() <= 100 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.isRead is bool;
+    }
+
+    // Route rules
+
+    // 1. Archives collection
+    match /archives/{archiveId} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff() && isValidArchive(incoming());
       allow delete: if isAdmin();
     }
 
-    match /users/{uid} {
-      // Basic access: Own profile (by UID or by ID Prefix)
-      allow get: if isSignedIn() && (
-        request.auth.uid == uid || 
-        isEmailPrefix(uid)
-      );
-      
-      // Allow searching for pre-profiles by email field
-      allow get: if isSignedIn() && (
-        resource != null && (
-          resource.data.email == request.auth.token.email
-        )
-      );
-
-      // Staff/Admin access
-      allow get, list: if isStaff();
-      
-      // Allow creation of your own profile or by Admin
-      allow create: if isSignedIn() && (
-        isAdmin() || 
-        request.auth.uid == uid
-      );
-      
-      // Allow update of your own profile or by Admin
-      allow update: if isSignedIn() && (
-        request.auth.uid == uid || 
-        isAdmin()
-      );
-      
-      // Allow deletion of your own profile (for claiming) or by Admin
-      allow delete: if isSignedIn() && (
-        uid == request.auth.uid ||
-        isEmailPrefix(uid) ||
-        isAdmin()
-      );
+    // 2. Loans collection
+    match /loans/{loanId} {
+      allow read: if isSignedIn();
+      allow create: if isStaff() && isValidLoan(incoming());
+      allow update: if isStaff() && isValidLoan(incoming());
+      allow delete: if isAdmin();
     }
 
+    // 3. Users Profiles collection
+    match /users/{uid} {
+      allow get: if isSignedIn() && (request.auth.uid == uid || isStaff());
+      allow list: if isStaff();
+      allow create, update: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // 4. Locations & master wilayah collection
     match /locations/{locationId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
+    // 5. System Notifications collection
     match /notifications/{notificationId} {
-      allow read, create, update: if isSignedIn();
-      allow delete: if isAdmin();
+      allow read, write: if isSignedIn();
     }
   }
 }

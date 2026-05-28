@@ -18,8 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { db, auth } from "../lib/firebase";
 import { 
+  db, 
+  auth,
   collection, 
   getDocs, 
   doc, 
@@ -27,7 +28,7 @@ import {
   deleteDoc, 
   writeBatch,
   serverTimestamp 
-} from "firebase/firestore";
+} from "../lib/firebase";
 
 interface BackupData {
   users: any[];

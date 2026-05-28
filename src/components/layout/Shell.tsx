@@ -67,10 +67,18 @@ interface ShellProps {
 
 export function Shell({ children, activeId, onNavigate, user, onLogout }: ShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [dbStatus, setDbStatus] = React.useState<{ connected: boolean; mode: string; databaseName?: string | null } | null>(null);
   const { loans } = useLoans();
   const { archives } = useArchives();
   const { notifications } = useNotifications(loans, archives);
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  React.useEffect(() => {
+    fetch("/api/db-status")
+      .then(r => r.json())
+      .then(d => setDbStatus(d))
+      .catch(e => console.error("Error fetching db status:", e));
+  }, []);
 
   const filteredNavItems = navItems.filter(item => {
     if (item.id === 'users' || item.id === 'locations') {
@@ -161,6 +169,16 @@ export function Shell({ children, activeId, onNavigate, user, onLogout }: ShellP
                   <ShieldCheck size={8} className="text-emerald-400" />
                   <p className="text-[8px] text-emerald-400/70 font-bold uppercase tracking-widest leading-none">{getRoleName(user?.role)}</p>
               </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 text-[9px]">
+            <Database size={12} className={dbStatus?.connected ? "text-emerald-400 animate-pulse shrink-0" : "text-amber-400 shrink-0"} />
+            <div className="flex-1 overflow-hidden">
+              <p className="text-white/40 font-bold uppercase tracking-wider leading-none text-[8px]">Database Core</p>
+              <p className={cn("font-bold truncate mt-1 leading-none", dbStatus?.connected ? "text-emerald-400" : "text-amber-400")}>
+                {dbStatus?.connected ? `MongoDB (${dbStatus.databaseName || "Online"})` : "Local JSON Disk"}
+              </p>
             </div>
           </div>
 

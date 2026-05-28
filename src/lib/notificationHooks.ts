@@ -1,4 +1,8 @@
+import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect, useRef } from 'react';
 import { 
+  auth, 
+  db,
   collection, 
   addDoc, 
   updateDoc, 
@@ -9,18 +13,34 @@ import {
   serverTimestamp,
   orderBy,
   writeBatch
-} from 'firebase/firestore';
-import { useState, useEffect, useRef } from 'react';
-import { db } from './firebase';
+} from './firebase';
 import { SystemNotification, Loan, Archive } from '../types';
 import { handleFirestoreError, OperationType } from './error-handler';
 
 export function useNotifications(loans: Loan[] = [], archives: Archive[] = []) {
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const checkedRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
+    if (!auth) {
+      setIsAuthenticated(false);
+      return;
+    }
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      setLoading(true);
+      return;
+    }
+
     let unsubscribe: (() => void) | undefined;
 
     const initNotifications = async () => {
@@ -57,7 +77,7 @@ export function useNotifications(loans: Loan[] = [], archives: Archive[] = []) {
 
     initNotifications();
     return () => unsubscribe?.();
-  }, []);
+  }, [isAuthenticated]);
 
   // Proactive Overdue & Completeness Checkers
   useEffect(() => {

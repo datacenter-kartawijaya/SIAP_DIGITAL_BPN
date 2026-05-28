@@ -1,4 +1,8 @@
+import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react';
 import { 
+  auth, 
+  db,
   collection, 
   addDoc, 
   updateDoc, 
@@ -7,18 +11,35 @@ import {
   onSnapshot, 
   query, 
   serverTimestamp,
-  orderBy
-} from 'firebase/firestore';
-import { useState, useEffect } from 'react';
-import { auth, db } from './firebase';
+  orderBy,
+  deleteDoc
+} from './firebase';
 import { Loan } from '../types';
 import { handleFirestoreError, OperationType } from './error-handler';
 
 export function useLoans() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
+    if (!auth) {
+      setIsAuthenticated(false);
+      return;
+    }
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLoans([]);
+      setLoading(true);
+      return;
+    }
+
     let unsubscribe: (() => void) | undefined;
 
     const initLoans = async () => {
@@ -55,7 +76,7 @@ export function useLoans() {
 
     initLoans();
     return () => unsubscribe?.();
-  }, []);
+  }, [isAuthenticated]);
 
   const createLoan = async (archiveId: string, borrowerName: string, purpose: string, photo?: string, notes?: string) => {
     if (!db) throw new Error("Database not initialized");
@@ -175,7 +196,6 @@ export function useLoans() {
         });
       }
 
-      const { deleteDoc } = await import('firebase/firestore');
       await deleteDoc(doc(db, collectionPath, loanId));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `${collectionPath}/${loanId}`);

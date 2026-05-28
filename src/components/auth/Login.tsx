@@ -55,18 +55,20 @@ export function Login() {
         setIsRegistering(false);
       } catch (error: any) {
         console.error("Registration Error:", error);
-        let message = "Registrasi Gagal";
         if (error.code === 'auth/email-already-in-use') {
-          message = "ID Personel ini sudah aktif.";
-          toast.info("Sudah Aktif", {
-            description: "Silakan gunakan menu Login. Jika lupa password, klik 'Lupa Password' di bawah."
+          toast.info("ID Personel Sudah Aktif", {
+            description: "Silakan langsung masuk menggunakan password Anda di menu Login."
           });
-        } else if (error.code === 'auth/weak-password') {
-          message = "Password terlalu lemah (min. 6 karakter).";
+          setIsRegistering(false);
         } else {
-          message = error.message || "Gagal membuat akun.";
+          let message = "Registrasi Gagal";
+          if (error.code === 'auth/weak-password') {
+            message = "Password terlalu lemah (min. 6 karakter).";
+          } else {
+            message = error.message || "Gagal membuat akun.";
+          }
+          toast.error(message);
         }
-        toast.error(message);
       } finally {
         setIsLoading(false);
       }

@@ -1,4 +1,8 @@
+import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react';
 import { 
+  auth, 
+  db,
   collection, 
   addDoc, 
   updateDoc, 
@@ -9,9 +13,7 @@ import {
   where, 
   serverTimestamp,
   orderBy
-} from 'firebase/firestore';
-import { useState, useEffect } from 'react';
-import { auth, db } from './firebase';
+} from './firebase';
 import { Archive, ArchiveType } from '../types';
 import { handleFirestoreError, OperationType } from './error-handler';
 
@@ -19,8 +21,26 @@ export function useArchives(type?: ArchiveType) {
   const [archives, setArchives] = useState<Archive[]>([]);
   const [archivesLoading, setArchivesLoading] = useState(true);
   const [archivesError, setArchivesError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
+    if (!auth) {
+      setIsAuthenticated(false);
+      return;
+    }
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setArchives([]);
+      setArchivesLoading(true);
+      return;
+    }
+
     let unsubscribe: (() => void) | undefined;
 
     const initDocs = async () => {
@@ -56,7 +76,7 @@ export function useArchives(type?: ArchiveType) {
 
     initDocs();
     return () => unsubscribe?.();
-  }, [type]);
+  }, [type, isAuthenticated]);
 
   const addArchive = async (data: any) => {
     if (!db) throw new Error("Database not initialized");
