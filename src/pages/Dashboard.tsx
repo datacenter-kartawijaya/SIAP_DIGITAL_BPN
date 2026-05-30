@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -52,11 +51,6 @@ const PIE_COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd'];
 export function Dashboard({ onNavigate }: { onNavigate?: (id: string) => void }) {
   const { archives, loading: archivesLoading } = useArchives();
   const { loans, loading: loansLoading } = useLoans();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const activeLoans = loans.filter(l => l.status === 'Active');
   const overdueLoans = activeLoans.filter(l => isAfter(new Date(), new Date(l.expectedReturnDate)));
@@ -235,41 +229,37 @@ export function Dashboard({ onNavigate }: { onNavigate?: (id: string) => void })
                <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-700">Monthly</button>
             </div>
           </div>
-          <CardContent className="flex-1 p-6 pt-10 min-h-0 flex flex-col justify-end">
-            {mounted ? (
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 700}} 
-                    dy={10}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 700}} 
-                  />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{
-                      fontSize: '11px', 
-                      borderRadius: '16px', 
-                      border: 'none', 
-                      fontWeight: 'bold',
-                      boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Bar dataKey="buku" fill="#1e3a8a" radius={[6, 6, 0, 0]} barSize={24} />
-                  <Bar dataKey="suratUkur" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={24} />
-                  <Bar dataKey="warkah" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full bg-slate-50 animate-pulse rounded-2xl" />
-            )}
+          <CardContent className="flex-1 p-6 pt-10 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 700}} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 700}} 
+                />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{
+                    fontSize: '11px', 
+                    borderRadius: '16px', 
+                    border: 'none', 
+                    fontWeight: 'bold',
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+                  }}
+                />
+                <Bar dataKey="buku" fill="#1e3a8a" radius={[6, 6, 0, 0]} barSize={24} />
+                <Bar dataKey="suratUkur" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={24} />
+                <Bar dataKey="warkah" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -280,28 +270,24 @@ export function Dashboard({ onNavigate }: { onNavigate?: (id: string) => void })
           </div>
           <CardContent className="flex-1 flex flex-col items-center justify-center p-6 pt-0">
             <div className="w-full h-48 relative mb-8">
-               {mounted ? (
-                 <ResponsiveContainer width="100%" height={180}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                 </ResponsiveContainer>
-               ) : (
-                 <div className="w-full h-full bg-slate-50 animate-pulse rounded-full" />
-               )}
+               <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+               </ResponsiveContainer>
                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-2xl font-black text-slate-900 leading-none">12.4k</span>
                   <span className="text-[9px] text-slate-400 font-bold uppercase mt-1">Total Arsip</span>

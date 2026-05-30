@@ -1,8 +1,4 @@
-import { onAuthStateChanged } from 'firebase/auth';
-import { useState, useEffect } from 'react';
 import { 
-  auth, 
-  db,
   collection, 
   addDoc, 
   updateDoc, 
@@ -13,7 +9,10 @@ import {
   where, 
   serverTimestamp,
   orderBy
-} from './firebase';
+} from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { auth, db } from './firebase';
 import { Archive, ArchiveType } from '../types';
 import { handleFirestoreError, OperationType } from './error-handler';
 

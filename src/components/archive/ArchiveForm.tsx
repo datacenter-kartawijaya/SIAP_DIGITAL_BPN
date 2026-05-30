@@ -22,7 +22,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JENIS_HAK, JENIS_KEGIATAN } from "@/src/constants";
 import { ArchiveType, Location } from "@/src/types";
-import { collection, query, where, getDocs, db } from "../../lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+
+import { db } from "../../lib/firebase";
 
 const archiveSchema = z.object({
   type: z.enum(["BUKU_TANAH", "WARKAH", "SURAT_UKUR"]),

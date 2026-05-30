@@ -1,8 +1,4 @@
-import { onAuthStateChanged } from 'firebase/auth';
-import { useState, useEffect } from 'react';
 import { 
-  auth, 
-  db,
   collection, 
   addDoc, 
   updateDoc, 
@@ -11,9 +7,11 @@ import {
   onSnapshot, 
   query, 
   serverTimestamp,
-  orderBy,
-  deleteDoc
-} from './firebase';
+  orderBy
+} from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { auth, db } from './firebase';
 import { Loan } from '../types';
 import { handleFirestoreError, OperationType } from './error-handler';
 
@@ -196,6 +194,7 @@ export function useLoans() {
         });
       }
 
+      const { deleteDoc } = await import('firebase/firestore');
       await deleteDoc(doc(db, collectionPath, loanId));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `${collectionPath}/${loanId}`);

@@ -1,6 +1,5 @@
 import * as React from "react";
 import { 
-  db,
   collection, 
   onSnapshot, 
   query, 
@@ -10,7 +9,7 @@ import {
   deleteDoc,
   writeBatch,
   getDocs
-} from '../lib/firebase';
+} from 'firebase/firestore';
 import { Location } from '../types';
 import { 
   Table, 
@@ -33,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Edit, MapPin, Loader2, RefreshCw, Search, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+import { db } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/error-handler';
 
 const INITIAL_LOCATIONS = [

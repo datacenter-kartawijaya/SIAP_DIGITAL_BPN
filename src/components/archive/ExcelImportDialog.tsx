@@ -21,7 +21,8 @@ import {
 import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, Upload, AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Archive, ArchiveType } from "@/src/types";
-import { db, auth, collection, addDoc, serverTimestamp } from "@/src/lib/firebase";
+import { db, auth } from "@/src/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface ExcelImportDialogProps {
   isOpen: boolean;

@@ -1,8 +1,6 @@
 import * as React from "react";
 import { useState, useEffect } from 'react';
 import { 
-  auth, 
-  db,
   collection, 
   query, 
   onSnapshot, 
@@ -12,7 +10,7 @@ import {
   setDoc,
   serverTimestamp,
   orderBy
-} from '../lib/firebase';
+} from 'firebase/firestore';
 import { User, UserRole } from '../types';
 import { 
   Table, 
@@ -46,6 +44,7 @@ import { MoreVertical, UserPlus, Shield, User as UserIcon, Trash2, CheckCircle2,
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { cn } from "@/src/lib/utils";
+import { auth, db } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/error-handler';
 import { useAuth } from '../lib/auth';
 
